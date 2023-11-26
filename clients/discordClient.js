@@ -1,9 +1,19 @@
 require('dotenv').config()
-const { Client, Collection, Events, GatewayIntentBits } = require('discord.js')
+const { Client, Collection, Events, GatewayIntentBits, Partials } = require('discord.js')
 const fs = require('node:fs')
 const path = require('node:path')
 
-const client = new Client({ intents: [GatewayIntentBits.Guilds]})
+const client = new Client({ 
+    intents: [
+        GatewayIntentBits.Guilds, 
+        GatewayIntentBits.GuildMessages, 
+        GatewayIntentBits.MessageContent, 
+        GatewayIntentBits.DirectMessages
+    ],
+    partials: [
+        Partials.Channel
+    ]
+})
 
 client.commands = new Collection() // references list of commands 
 
@@ -23,12 +33,29 @@ for(const folder of commandFolders) {
         } else {
             console.log(`[WARNING]: The command at ${filePath} is missing a required "data" or "execute" property`);
         }
+    
+    
     }
 }
 
+client.on('messageCreate', message => {
+    if(message.guildId === null) {
+        const user = message.author
+        if(message.content.startsWith('/')) {
+            const commandName = message.content.split('/')[1]
+            const command = client.commands.get(commandName)
+            if(!command) {
+                user.send(`No command matching ${commandName} was found.`)
+                return
+            }
+            command.handle(user)
+            
+        }
+    }
+})
+
 client.on(Events.InteractionCreate, async interaction => {
     if(!interaction.isChatInputCommand()) return 
-
     const command = interaction.client.commands.get(interaction.commandName)
 
     if(!command) {
@@ -51,6 +78,8 @@ client.on(Events.InteractionCreate, async interaction => {
 client.once(Events.ClientReady, async (c) => {
     console.log(`Ready! Logged in as ${c.user.tag}`);
 })
+
+
 
 exports.discordClient = client
 
