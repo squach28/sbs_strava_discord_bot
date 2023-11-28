@@ -1,3 +1,4 @@
+// Required to register commands with Discord
 const { REST, Routes } = require('discord.js');
 const fs = require('node:fs');
 const path = require('node:path');

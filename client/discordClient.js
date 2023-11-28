@@ -1,3 +1,5 @@
+// Discord Client
+// Declares permimssions, registers commands, and registers event/command handling
 require('dotenv').config()
 const { Client, Collection, Events, GatewayIntentBits, Partials } = require('discord.js')
 const fs = require('node:fs')
@@ -23,7 +25,7 @@ const commandFolders = fs.readdirSync(foldersPath)
 
 for(const folder of commandFolders) {
     const commandsPath = path.join(foldersPath, folder)
-    if(commandsPath.endsWith('.js')) continue
+    if(commandsPath.endsWith('.js')) continue // not a command folder, ignore deploy-commands.js file
     const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js'))
     for(const file of commandFiles) {
         const filePath = path.join(commandsPath, file)
@@ -38,10 +40,11 @@ for(const folder of commandFolders) {
     }
 }
 
+// event handler for direct messaging
 client.on('messageCreate', message => {
-    if(message.guildId === null) {
+    if(message.guildId === null) { // no guild ID means DM
         const user = message.author
-        if(message.content.startsWith('/')) {
+        if(message.content.startsWith('/')) { // check if user sent a command
             const commandName = message.content.split('/')[1]
             const command = client.commands.get(commandName)
             if(!command) {
@@ -49,19 +52,29 @@ client.on('messageCreate', message => {
                 return
             }
             command.handle(user)
-            
         }
     }
 })
 
+// command handling in server
 client.on(Events.InteractionCreate, async interaction => {
+    if(interaction.isAutocomplete()) {
+        const command = interaction.client.commands.get(interaction.commandName)
+        try {
+            await command.autocomplete(interaction)
+        } catch(e) {
+            console.log(e)
+        }
+    }
     if(!interaction.isChatInputCommand()) return 
-    const command = interaction.client.commands.get(interaction.commandName)
 
+    const command = interaction.client.commands.get(interaction.commandName)
+    
     if(!command) {
         console.error(`No command matching ${interaction.commandName} was found.`)
         return 
     }
+
 
     try {
         await command.execute(interaction)
