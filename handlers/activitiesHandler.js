@@ -1,3 +1,5 @@
+// API handler for checking a user's activities
+
 const fetch = require('node-fetch')
 
 const getActivitiesByDiscordId = async (discordId) => {

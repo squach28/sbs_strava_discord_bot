@@ -1,9 +1,31 @@
 const { SlashCommandBuilder } = require('discord.js')
 const { getActivitiesByDiscordId, getActivitiesByCategory } = require('../../../handlers/activitiesHandler')
 const stravaActivities = require('./stravaActivities.json')
-const { AsciiTable3, AlignmentEnum } = require('ascii-table3')
 
 // TODO: create a way to make ascii tables that will translate into discord messages
+const MAX_CHARACTER_LENGTH = 42
+
+const createTable = (items) => {
+    const table = []
+    const divider = '-'.repeat(MAX_CHARACTER_LENGTH) + "\n"
+    table.push(divider)
+    for(let item of items) {
+        table.push(Object.values(item).join(', ') + " mi" + "\n")
+        table.push(divider)
+    }
+    const totalDistance = items.reduce((accum, item) => accum += item.distance
+    , 0)
+    const summary = `Total Activities: **${items.length}**, Total Distance: **${totalDistance} mi**`
+    table.push(summary)
+    return table
+}
+
+const convertToMiles = (meters) => {
+    const meterToMileConversion = 0.0006213712
+    return Math.round(meters * meterToMileConversion)
+}
+
+
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('activities')
@@ -36,7 +58,19 @@ module.exports = {
                 } else {
                     activities = await getActivitiesByDiscordId(discordId)
                 }
-                await interaction.reply('activities')
+                const formattedActivities = activities.map(activity => {
+                    const options = { month: 'short', day: 'numeric', year: 'numeric'}
+                    const date = new Date(activity.start_date_local)
+
+                    return {
+                        name: activity.name, 
+                        date: date.toLocaleDateString('en-us', options), 
+                        distance: convertToMiles(activity.distance)
+                    }
+                })
+                const table = createTable(formattedActivities)
+                const tableAsString = table.join('')
+                await interaction.reply(tableAsString)
 
             } catch(e) {
                 await interaction.reply('Something went wrong, please try again later.')
@@ -61,13 +95,16 @@ module.exports = {
                 const formattedActivities = activities.map(activity => {
                     const options = { month: 'short', day: 'numeric', year: 'numeric'}
                     const date = new Date(activity.start_date_local)
-                    return [ activity.name, date.toLocaleDateString('en-us', options), activity.distance ]
+
+                    return {
+                        name: activity.name, 
+                        date: date.toLocaleDateString('en-us', options), 
+                        distance: convertToMiles(activity.distance)
+                    }
                 })
-                const table = new AsciiTable3('Your activities')
-                                .setHeading('Name', 'Date', 'Distance')
-                                .setAlign(1, AlignmentEnum.CENTER)
-                                .addRowMatrix(formattedActivities)
-                await user.send(table.toString())
+                const table = createTable(formattedActivities)
+                const tableAsString = table.join('')
+                await user.send(tableAsString)
                 
             } catch(e) {
                 console.log(e)
