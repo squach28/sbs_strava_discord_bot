@@ -11,7 +11,7 @@ module.exports = {
         async execute(interaction) {
             await interaction.reply(file)
         },
-        async handle(user) {
+        async handle(user, _) {
             user.send(file)
         }
 }

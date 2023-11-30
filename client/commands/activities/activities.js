@@ -1,6 +1,9 @@
 const { SlashCommandBuilder } = require('discord.js')
 const { getActivitiesByDiscordId, getActivitiesByCategory } = require('../../../handlers/activitiesHandler')
 const stravaActivities = require('./stravaActivities.json')
+const { AsciiTable3, AlignmentEnum } = require('ascii-table3')
+
+// TODO: create a way to make ascii tables that will translate into discord messages
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('activities')
@@ -33,15 +36,43 @@ module.exports = {
                 } else {
                     activities = await getActivitiesByDiscordId(discordId)
                 }
-                console.log(activities)
-                interaction.reply('activities')
+                await interaction.reply('activities')
 
             } catch(e) {
-                interaction.reply('Something went wrong, please try again later.')
+                await interaction.reply('Something went wrong, please try again later.')
             }
         },
-        async handle(user) {
+        async handle(user, commandParams) {
+            const discordId = user.id
+            if(commandParams.length > 1) {
+                await user.send('Too many parameters provided, please provide one category')
+                return 
+            }
+            
+            const category = commandParams[0]
 
+            try {
+                let activities;
+                if(category !== undefined) {
+                    activities = await getActivitiesByCategory(discordId, category)
+                } else {
+                    activities = await getActivitiesByDiscordId(discordId)
+                }
+                const formattedActivities = activities.map(activity => {
+                    const options = { month: 'short', day: 'numeric', year: 'numeric'}
+                    const date = new Date(activity.start_date_local)
+                    return [ activity.name, date.toLocaleDateString('en-us', options), activity.distance ]
+                })
+                const table = new AsciiTable3('Your activities')
+                                .setHeading('Name', 'Date', 'Distance')
+                                .setAlign(1, AlignmentEnum.CENTER)
+                                .addRowMatrix(formattedActivities)
+                await user.send(table.toString())
+                
+            } catch(e) {
+                console.log(e)
+                await user.send('Something went wrong, please try again later.')
+            }
         },
 
 }

@@ -34,7 +34,7 @@ module.exports = {
                 await interaction.reply('Something went wrong, please try again later.')
             }
         },
-        async handle(user) {
+        async handle(user, _) {
             const discordId = user.id
             try {
                 const res = await checkIfUserExists(discordId)

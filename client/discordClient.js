@@ -45,13 +45,14 @@ client.on('messageCreate', message => {
     if(message.guildId === null) { // no guild ID means DM
         const user = message.author
         if(message.content.startsWith('/')) { // check if user sent a command
-            const commandName = message.content.split('/')[1]
+            const commandName = message.content.split(' ')[0].split('/')[1]
+            const commandParams = message.content.split(' ').slice(1)
             const command = client.commands.get(commandName)
             if(!command) {
                 user.send(`No command matching ${commandName} was found.`)
                 return
             }
-            command.handle(user)
+            command.handle(user, commandParams)
         }
     }
 })
