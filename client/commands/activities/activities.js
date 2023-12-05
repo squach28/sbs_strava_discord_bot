@@ -1,8 +1,6 @@
 const { SlashCommandBuilder } = require('discord.js')
-const { getActivitiesByDiscordId, getActivitiesByCategory } = require('../../../handlers/activitiesHandler')
+const { getActivitiesByDiscordId } = require('../../../handlers/activitiesHandler')
 const stravaActivities = require('./stravaActivities.json')
-
-// TODO: create a way to make ascii tables that will translate into discord messages
 const MAX_CHARACTER_LENGTH = 42
 
 const createTable = (items) => {
@@ -45,18 +43,19 @@ module.exports = {
         async execute(interaction) {
             const user = interaction.user 
             const discordId = user.id
+            const params = {}
             const categoryInfo = interaction.options._hoistedOptions.find(option => {
                 if(option.name === 'category') {
                     return option 
                 }
             })
-            
+            params['category'] = categoryInfo.value
             try {
                 let activities
                 if(categoryInfo !== undefined) {
-                    activities = await getActivitiesByCategory(discordId, categoryInfo.value)
+                    activities = await getActivitiesByDiscordId(discordId, params)
                 } else {
-                    activities = await getActivitiesByDiscordId(discordId)
+                    activities = await getActivitiesByDiscordId(discordId, {})
                 }
                 const formattedActivities = activities.map(activity => {
                     const options = { month: 'short', day: 'numeric', year: 'numeric'}
@@ -88,9 +87,9 @@ module.exports = {
             try {
                 let activities;
                 if(category !== undefined) {
-                    activities = await getActivitiesByCategory(discordId, category)
+                    activities = await getActivitiesByDiscordId(discordId, category)
                 } else {
-                    activities = await getActivitiesByDiscordId(discordId)
+                    activities = await getActivitiesByDiscordId(discordId, {})
                 }
                 const formattedActivities = activities.map(activity => {
                     const options = { month: 'short', day: 'numeric', year: 'numeric'}
