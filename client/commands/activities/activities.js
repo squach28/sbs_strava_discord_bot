@@ -49,10 +49,11 @@ module.exports = {
                     return option 
                 }
             })
-            params['category'] = categoryInfo.value
+
             try {
                 let activities
                 if(categoryInfo !== undefined) {
+                    params['category'] = categoryInfo.value
                     activities = await getActivitiesByDiscordId(discordId, params)
                 } else {
                     activities = await getActivitiesByDiscordId(discordId, {})
