@@ -1,6 +1,7 @@
 const { SlashCommandBuilder } = require('discord.js')
 const { getMonthlyLeaderboard } = require('../../../handlers/leaderboardHandler.js')
 
+const TIMEFRAME_CHOICES = ['month', 'year']
 const MAX_CHARACTER_LENGTH = 42
 
 const createLeaderboardTable = (items) => {
@@ -21,11 +22,34 @@ const createLeaderboardTable = (items) => {
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('leaderboard')
-        .setDescription('Get the leaderboard for this month or year'),
+        .setDescription('Get the leaderboard for this month or year')
+        .addStringOption(option => 
+            option.setName('timeframe')
+            .setDescription('Get leaderboard by month or year')
+            .setAutocomplete(true))
+        ,
+        async autocomplete(interaction) {
+            const focusedOption = interaction.options.getFocused(true)
+            const choices = TIMEFRAME_CHOICES
+            const filtered = choices.filter(choice => choice.startsWith(focusedOption.value))
+            await interaction.respond(filtered.map(choice => ({ name: choice, value: choice})))
+        },
         async execute(interaction) {
-            const user = interaction.user 
+            const params = {}
+            const timeframeInfo = interaction.options._hoistedOptions.find(option => {
+                if(option.name === 'timeframe') {
+                    return option
+                }
+            })
             try {
-                const leaderboard = await getMonthlyLeaderboard()
+                let leaderboard
+                if(timeframeInfo !== undefined) {
+                    params['timeframe'] = timeframeInfo.value
+                    leaderboard = await getMonthlyLeaderboard(params)
+                } else {
+                    leaderboard = await getMonthlyLeaderboard()
+                }
+
                 const table = createLeaderboardTable(leaderboard)
                 const tableAsString = table.join('')
                 await interaction.reply(tableAsString)

@@ -56,7 +56,7 @@ module.exports = {
                     params['category'] = categoryInfo.value
                     activities = await getActivitiesByDiscordId(discordId, params)
                 } else {
-                    activities = await getActivitiesByDiscordId(discordId, {})
+                    activities = await getActivitiesByDiscordId(discordId)
                 }
                 const formattedActivities = activities.map(activity => {
                     const options = { month: 'short', day: 'numeric', year: 'numeric'}
