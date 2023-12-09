@@ -1,7 +1,7 @@
 const fetch = require('node-fetch')
 const querystring = require('querystring')
 
-const getMonthlyLeaderboard = async (params = {}) => {
+const getLeaderboard = async (params = {}) => {
     try {
         const res = await fetch(`${process.env.API_URL}/leaderboard?` +
         querystring.stringify(params))
@@ -13,4 +13,4 @@ const getMonthlyLeaderboard = async (params = {}) => {
 
 }
 
-module.exports = { getMonthlyLeaderboard }
+module.exports = { getLeaderboard }

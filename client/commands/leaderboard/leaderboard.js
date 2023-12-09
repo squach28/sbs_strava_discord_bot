@@ -1,7 +1,7 @@
 const { SlashCommandBuilder } = require('discord.js')
-const { getMonthlyLeaderboard } = require('../../../handlers/leaderboardHandler.js')
+const { getLeaderboard } = require('../../../handlers/leaderboardHandler.js')
+const timeframeChoices = require('./timeframe.json')
 
-const TIMEFRAME_CHOICES = ['month', 'year']
 const MAX_CHARACTER_LENGTH = 42
 
 const createLeaderboardTable = (items) => {
@@ -22,37 +22,49 @@ const createLeaderboardTable = (items) => {
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('leaderboard')
-        .setDescription('Get the leaderboard for this month or year')
+        .setDescription(`Get the leaderboard for a certain month or year`)
         .addStringOption(option => 
-            option.setName('timeframe')
-            .setDescription('Get leaderboard by month or year')
-            .setAutocomplete(true))
+            option
+                .setName('month_or_year')
+                .setDescription('Enter the month or year you want to check')
+                .setAutocomplete(true))
+        .addStringOption(option => 
+            option
+                .setName('year')
+                .setDescription('If you entered month, you can enter year'))
         ,
         async autocomplete(interaction) {
             const focusedOption = interaction.options.getFocused(true)
-            const choices = TIMEFRAME_CHOICES
+            const choices = timeframeChoices
             const filtered = choices.filter(choice => choice.startsWith(focusedOption.value))
             await interaction.respond(filtered.map(choice => ({ name: choice, value: choice})))
         },
         async execute(interaction) {
             const params = {}
             const timeframeInfo = interaction.options._hoistedOptions.find(option => {
-                if(option.name === 'timeframe') {
+                if(option.name === 'month_or_year') {
                     return option
                 }
             })
+            const timeframeYearInfo = interaction.options._hoistedOptions.find(option => option.name === 'year' ? option : null)
             try {
                 let leaderboard
+                if(timeframeYearInfo !== undefined) {
+                    params['year'] = timeframeYearInfo.value
+                }
                 if(timeframeInfo !== undefined) {
-                    params['timeframe'] = timeframeInfo.value
-                    leaderboard = await getMonthlyLeaderboard(params)
+                    params['month_or_year'] = timeframeInfo.value
+  
+                }
+                leaderboard = await getLeaderboard(params)
+                if(leaderboard.length === 0) {
+                    await interaction.reply(`No leaderboard`)
                 } else {
-                    leaderboard = await getMonthlyLeaderboard()
+                    const table = createLeaderboardTable(leaderboard)
+                    const tableAsString = table.join('')
+                    await interaction.reply(tableAsString)
                 }
 
-                const table = createLeaderboardTable(leaderboard)
-                const tableAsString = table.join('')
-                await interaction.reply(tableAsString)
             } catch(e) {
                 console.log(e)
                 await interaction.reply('Something went wrong, please try again later.')
