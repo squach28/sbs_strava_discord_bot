@@ -4,7 +4,7 @@ const timeframeChoices = require('./timeframe.json')
 
 const MAX_CHARACTER_LENGTH = 42
 
-const createLeaderboardTable = (items) => {
+const createLeaderboardTable = (items, month = null, year = null) => {
     const table = []
     const title = `${new Date().toLocaleString('en-US', { month: 'long', year: 'numeric'})} Leaderboard\n`
     const divider = '-'.repeat(MAX_CHARACTER_LENGTH) + "\n"
@@ -53,14 +53,14 @@ module.exports = {
                     params['year'] = timeframeYearInfo.value
                 }
                 if(timeframeInfo !== undefined) {
-                    params['month_or_year'] = timeframeInfo.value
+                    params['monthOrYear'] = timeframeInfo.value
   
                 }
                 leaderboard = await getLeaderboard(params)
                 if(leaderboard.length === 0) {
                     await interaction.reply(`No leaderboard`)
                 } else {
-                    const table = createLeaderboardTable(leaderboard)
+                    const table = createLeaderboardTable(leaderboard.users)
                     const tableAsString = table.join('')
                     await interaction.reply(tableAsString)
                 }
@@ -68,6 +68,30 @@ module.exports = {
             } catch(e) {
                 console.log(e)
                 await interaction.reply('Something went wrong, please try again later.')
+            }
+        },
+        async handle(user, commandParams) {
+            const monthOrYear = commandParams[0]
+            const year = commandParams[1]
+            const params = {}
+            try {
+                let leaderboard 
+                if(monthOrYear && year) {
+                    params['monthOrYear'] = monthOrYear 
+                    params['year'] = year
+                    leaderboard = await getLeaderboard(params)
+                } else if(monthOrYear) {
+                    params['monthOrYear'] = monthOrYear
+                    leaderboard = await getLeaderboard(params)
+                } else {
+                    leaderboard = await getLeaderboard()
+                }
+                const table = createLeaderboardTable(leaderboard)
+                const tableAsString = table.join('')
+                await user.send(tableAsString)
+            } catch(e) {
+                console.log(e)
+                await user.send('Something went wrong, please try again later.')
             }
         }
 }
