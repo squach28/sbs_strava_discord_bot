@@ -6,7 +6,16 @@ const MAX_CHARACTER_LENGTH = 42
 
 const createLeaderboardTable = (items, month = null, year = null) => {
     const table = []
-    const title = `${new Date().toLocaleString('en-US', { month: 'long', year: 'numeric'})} Leaderboard\n`
+    let title
+    if(month && year) {
+        const date = new Date(year, month - 1) // subtract 1 from month to account that index starts at 0
+        console.log(date)
+        title = `${date.toLocaleString('en-US', { month: 'long', year: 'numeric'})} Leaderboard\n`
+    } else if(year) {
+        title = `${year} Leaderboard\n`
+    } else {
+        title = `${new Date().toLocaleString('en-US', { month: 'long', year: 'numeric'})} Leaderboard\n`
+    }
     const divider = '-'.repeat(MAX_CHARACTER_LENGTH) + "\n"
     table.push(title)
     table.push(divider)
@@ -60,7 +69,15 @@ module.exports = {
                 if(leaderboard.length === 0) {
                     await interaction.reply(`No leaderboard`)
                 } else {
-                    const table = createLeaderboardTable(leaderboard.users)
+                    let month, year 
+                    if(params['monthOrYear'] && params['year']) {
+                        month = leaderboard.month
+                        year = leaderboard.year 
+                    }
+                    if(params['monthOrYear']) {
+                        year = leaderboard.year
+                    }
+                    const table = createLeaderboardTable(leaderboard.users, month, year)
                     const tableAsString = table.join('')
                     await interaction.reply(tableAsString)
                 }
