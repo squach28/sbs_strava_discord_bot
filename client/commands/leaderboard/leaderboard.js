@@ -9,7 +9,6 @@ const createLeaderboardTable = (items, month = null, year = null) => {
     let title
     if(month && year) {
         const date = new Date(year, month - 1) // subtract 1 from month to account that index starts at 0
-        console.log(date)
         title = `${date.toLocaleString('en-US', { month: 'long', year: 'numeric'})} Leaderboard\n`
     } else if(year) {
         title = `${year} Leaderboard\n`
@@ -88,22 +87,30 @@ module.exports = {
             }
         },
         async handle(user, commandParams) {
-            const monthOrYear = commandParams[0]
-            const year = commandParams[1]
+            const monthOrYearInfo = commandParams[0]
+            const yearInfo = commandParams[1]
             const params = {}
             try {
                 let leaderboard 
-                if(monthOrYear && year) {
-                    params['monthOrYear'] = monthOrYear 
-                    params['year'] = year
+                if(monthOrYearInfo && yearInfo) {
+                    params['monthOrYear'] = monthOrYearInfo 
+                    params['year'] = yearInfo
                     leaderboard = await getLeaderboard(params)
-                } else if(monthOrYear) {
-                    params['monthOrYear'] = monthOrYear
+                } else if(monthOrYearInfo) {
+                    params['monthOrYear'] = monthOrYearInfo
                     leaderboard = await getLeaderboard(params)
                 } else {
                     leaderboard = await getLeaderboard()
                 }
-                const table = createLeaderboardTable(leaderboard)
+                let month, year
+                if(params['monthOrYear'] && params['year']) {
+                    month = leaderboard.month
+                    year = leaderboard.year 
+                }
+                if(params['monthOrYear']) {
+                    year = leaderboard.year
+                }
+                const table = createLeaderboardTable(leaderboard.users, month, year)
                 const tableAsString = table.join('')
                 await user.send(tableAsString)
             } catch(e) {
