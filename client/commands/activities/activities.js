@@ -3,8 +3,10 @@ const { getActivitiesByDiscordId } = require('../../../handlers/activitiesHandle
 const stravaActivities = require('./stravaActivities.json')
 const MAX_CHARACTER_LENGTH = 42
 
-const createTable = (items) => {
+// TODO: include person's name in the table
+const createTable = (name, items) => {
     const table = []
+    table.push(`Activities for ${name} \n`)
     const divider = '-'.repeat(MAX_CHARACTER_LENGTH) + "\n"
     table.push(divider)
     for(let item of items) {
@@ -18,10 +20,7 @@ const createTable = (items) => {
     return table
 }
 
-const convertToMiles = (meters) => {
-    const meterToMileConversion = 0.0006213712
-    return Math.round(meters * meterToMileConversion)
-}
+
 
 
 module.exports = {
@@ -49,7 +48,6 @@ module.exports = {
                     return option 
                 }
             })
-
             try {
                 let activities
                 if(categoryInfo !== undefined) {
@@ -65,14 +63,15 @@ module.exports = {
                     return {
                         name: activity.name, 
                         date: date.toLocaleDateString('en-us', options), 
-                        distance: convertToMiles(activity.distance)
+                        distance: activity.distance
                     }
                 })
-                const table = createTable(formattedActivities)
+                const table = createTable(interaction.user.username, formattedActivities)
                 const tableAsString = table.join('')
                 await interaction.reply(tableAsString)
 
             } catch(e) {
+                console.log(e)
                 await interaction.reply('Something went wrong, please try again later.')
             }
         },
@@ -90,7 +89,7 @@ module.exports = {
                 if(category !== undefined) {
                     activities = await getActivitiesByDiscordId(discordId, category)
                 } else {
-                    activities = await getActivitiesByDiscordId(discordId, {})
+                    activities = await getActivitiesByDiscordId(discordId)
                 }
                 const formattedActivities = activities.map(activity => {
                     const options = { month: 'short', day: 'numeric', year: 'numeric'}
