@@ -98,10 +98,10 @@ module.exports = {
                     return {
                         name: activity.name, 
                         date: date.toLocaleDateString('en-us', options), 
-                        distance: convertToMiles(activity.distance)
+                        distance: activity.distance
                     }
                 })
-                const table = createTable(formattedActivities)
+                const table = createTable(user.username, formattedActivities)
                 const tableAsString = table.join('')
                 await user.send(tableAsString)
                 
