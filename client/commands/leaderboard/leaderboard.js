@@ -24,7 +24,12 @@ const createLeaderboardTable = (items, month = null, year = null) => {
         const discordId = items[i].discordId // TODO: replace this with name
         table.push(`${i + 1}. **${discordId}**, ${numOfActivities} activities, ${distance} mi \n`)
     }
-    return table
+    return table.join('')
+}
+// TODO: finish this function that both execute and handle can call instead of separately calling the same thing lol
+const retrieveLeaderboard = async (params) => {
+    const leaderboard = await getLeaderboard(params)
+    return leaderboard
 }
 
 module.exports = {
@@ -39,7 +44,7 @@ module.exports = {
         .addStringOption(option => 
             option
                 .setName('year')
-                .setDescription('If you entered month, you can enter year'))
+                .setDescription('If you entered month, enter the year you want to check'))
         ,
         async autocomplete(interaction) {
             const focusedOption = interaction.options.getFocused(true)
@@ -49,22 +54,16 @@ module.exports = {
         },
         async execute(interaction) {
             const params = {}
-            const timeframeInfo = interaction.options._hoistedOptions.find(option => {
-                if(option.name === 'month_or_year') {
-                    return option
-                }
-            })
+            const timeframeInfo = interaction.options._hoistedOptions.find(option => option.name === 'month_or_year' ? option : null)
             const timeframeYearInfo = interaction.options._hoistedOptions.find(option => option.name === 'year' ? option : null)
+            if(timeframeYearInfo !== undefined) {
+                params['year'] = timeframeYearInfo.value
+            }
+            if(timeframeInfo !== undefined) {
+                params['monthOrYear'] = timeframeInfo.value
+            }
             try {
-                let leaderboard
-                if(timeframeYearInfo !== undefined) {
-                    params['year'] = timeframeYearInfo.value
-                }
-                if(timeframeInfo !== undefined) {
-                    params['monthOrYear'] = timeframeInfo.value
-  
-                }
-                leaderboard = await getLeaderboard(params)
+                const leaderboard = await retrieveLeaderboard(params)
                 if(leaderboard.length === 0) {
                     await interaction.reply(`No leaderboard`)
                 } else {
@@ -76,9 +75,8 @@ module.exports = {
                     if(params['monthOrYear']) {
                         year = leaderboard.year
                     }
-                    const table = createLeaderboardTable(leaderboard.users, month, year)
-                    const tableAsString = table.join('')
-                    await interaction.reply(tableAsString)
+                    const leaderboardTable = createLeaderboardTable(leaderboard.users, month, year)
+                    await interaction.reply(leaderboardTable)
                 }
 
             } catch(e) {
@@ -90,18 +88,16 @@ module.exports = {
             const monthOrYearInfo = commandParams[0]
             const yearInfo = commandParams[1]
             const params = {}
+            if(monthOrYearInfo && yearInfo) {
+                params['monthOrYear'] = monthOrYearInfo 
+                params['year'] = yearInfo
+            }
+            if(monthOrYearInfo) {
+                params['monthOrYear'] = monthOrYearInfo
+            }
             try {
-                let leaderboard 
-                if(monthOrYearInfo && yearInfo) {
-                    params['monthOrYear'] = monthOrYearInfo 
-                    params['year'] = yearInfo
-                    leaderboard = await getLeaderboard(params)
-                } else if(monthOrYearInfo) {
-                    params['monthOrYear'] = monthOrYearInfo
-                    leaderboard = await getLeaderboard(params)
-                } else {
-                    leaderboard = await getLeaderboard()
-                }
+                const leaderboard = await retrieveLeaderboard(params)
+
                 let month, year
                 if(params['monthOrYear'] && params['year']) {
                     month = leaderboard.month
@@ -110,9 +106,8 @@ module.exports = {
                 if(params['monthOrYear']) {
                     year = leaderboard.year
                 }
-                const table = createLeaderboardTable(leaderboard.users, month, year)
-                const tableAsString = table.join('')
-                await user.send(tableAsString)
+                const leaderboardTable = createLeaderboardTable(leaderboard.users, month, year)
+                await user.send(leaderboardTable)
             } catch(e) {
                 console.log(e)
                 await user.send('Something went wrong, please try again later.')

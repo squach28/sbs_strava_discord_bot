@@ -1,7 +1,7 @@
 const fetch = require('node-fetch')
 const querystring = require('querystring')
 
-const getLeaderboard = async (params = {}) => {
+const getLeaderboard = async (params) => {
     try {
         const res = await fetch(`${process.env.API_URL}/leaderboard?` +
         querystring.stringify(params))
