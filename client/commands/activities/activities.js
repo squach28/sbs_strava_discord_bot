@@ -20,6 +20,22 @@ const createActivitiesTable = (name, items) => {
     return table.join('')
 }
 
+// call getActivitesByDiscordId in handler to call getActivitiesByDiscord API 
+const getActivities = async (discordId, params) => {
+    const activities = await getActivitiesByDiscordId(discordId, params)
+    const formattedActivities = activities.map(activity => {
+        const options = { month: 'short', day: 'numeric', year: 'numeric'}
+        const date = new Date(activity.start_date_local)
+
+        return {
+            name: activity.name, 
+            date: date.toLocaleDateString('en-us', options), 
+            distance: activity.distance
+        }
+    })
+    return formattedActivities
+}
+
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('activities')
@@ -45,26 +61,13 @@ module.exports = {
                     return option 
                 }
             })
+            if(categoryInfo !== undefined) { // user provided a category in discord command 
+                params['category'] = categoryInfo.value
+            }
             try {
-                let activities
-                if(categoryInfo !== undefined) { // user provided a category in discord command 
-                    params['category'] = categoryInfo.value
-                    activities = await getActivitiesByDiscordId(discordId, params)
-                } else {
-                    activities = await getActivitiesByDiscordId(discordId)
-                }
+                const activities = await getActivities(discordId, params)
                 // formats date to human readable date
-                const formattedActivities = activities.map(activity => {
-                    const options = { month: 'short', day: 'numeric', year: 'numeric'}
-                    const date = new Date(activity.start_date_local)
-
-                    return {
-                        name: activity.name, 
-                        date: date.toLocaleDateString('en-us', options), 
-                        distance: activity.distance
-                    }
-                })
-                const activitiesTable = createActivitiesTable(interaction.user.username, formattedActivities)
+                const activitiesTable = createActivitiesTable(interaction.user.username, activities)
                 await interaction.reply(activitiesTable)
 
             } catch(e) {
@@ -78,27 +81,14 @@ module.exports = {
                 await user.send('Too many parameters provided, please provide one category')
                 return 
             }
-            
-            const category = commandParams[0]
+            // category that user may or may have not entered
+            const category = {
+                category: commandParams[0]
+            }
 
-            try {
-                let activities;
-                if(category !== undefined) { // user provided a category in discord command 
-                    activities = await getActivitiesByDiscordId(discordId, category)
-                } else {
-                    activities = await getActivitiesByDiscordId(discordId)
-                }
-                const formattedActivities = activities.map(activity => {
-                    const options = { month: 'short', day: 'numeric', year: 'numeric'}
-                    const date = new Date(activity.start_date_local)
-
-                    return {
-                        name: activity.name, 
-                        date: date.toLocaleDateString('en-us', options), 
-                        distance: activity.distance
-                    }
-                })
-                const table = createActivitiesTable(user.username, formattedActivities)
+            try { 
+                const activities = await getActivities(discordId, category)
+                const table = createActivitiesTable(user.username, activities)
                 await user.send(table)
                 
             } catch(e) {
