@@ -26,7 +26,7 @@ const createLeaderboardTable = (items, month = null, year = null) => {
     }
     return table.join('')
 }
-// TODO: finish this function that both execute and handle can call instead of separately calling the same thing lol
+
 const retrieveLeaderboard = async (params) => {
     const leaderboard = await getLeaderboard(params)
     return leaderboard
