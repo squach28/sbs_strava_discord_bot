@@ -1,27 +1,24 @@
 const { SlashCommandBuilder } = require('discord.js')
 const { getActivitiesByDiscordId } = require('../../../handlers/activitiesHandler')
 const stravaActivities = require('./stravaActivities.json')
-const MAX_CHARACTER_LENGTH = 42
+const MAX_CHARACTER_LENGTH = 42 // stores max character length for a single line in discord message
 
-// TODO: include person's name in the table
-const createTable = (name, items) => {
+// creates an ASCII table for the user's activities with the user's username in the header
+const createActivitiesTable = (name, items) => {
     const table = []
-    table.push(`Activities for ${name} \n`)
+    const dateOptions = { month: 'short', year: 'numeric' }
+    table.push(`${new Date().toLocaleDateString('en-US', dateOptions)} Activities for ${name} \n`)
     const divider = '-'.repeat(MAX_CHARACTER_LENGTH) + "\n"
     table.push(divider)
     for(let item of items) {
         table.push(Object.values(item).join(', ') + " mi" + "\n")
         table.push(divider)
     }
-    const totalDistance = items.reduce((accum, item) => accum += item.distance
-    , 0)
+    const totalDistance = items.reduce((accum, item) => accum += item.distance, 0)
     const summary = `Total Activities: **${items.length}**, Total Distance: **${totalDistance} mi**`
     table.push(summary)
-    return table
+    return table.join('')
 }
-
-
-
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -30,7 +27,7 @@ module.exports = {
         .addStringOption(option => 
             option
                 .setName('category')
-                .setDescription('Which sport category do you want to select')
+                .setDescription('Select the sport category you want')
                 .setAutocomplete(true)
         ),
         async autocomplete(interaction) {
@@ -42,7 +39,7 @@ module.exports = {
         async execute(interaction) {
             const user = interaction.user 
             const discordId = user.id
-            const params = {}
+            const params = {} // params to filter activites based on category
             const categoryInfo = interaction.options._hoistedOptions.find(option => {
                 if(option.name === 'category') {
                     return option 
@@ -50,12 +47,13 @@ module.exports = {
             })
             try {
                 let activities
-                if(categoryInfo !== undefined) {
+                if(categoryInfo !== undefined) { // user provided a category in discord command 
                     params['category'] = categoryInfo.value
                     activities = await getActivitiesByDiscordId(discordId, params)
                 } else {
                     activities = await getActivitiesByDiscordId(discordId)
                 }
+                // formats date to human readable date
                 const formattedActivities = activities.map(activity => {
                     const options = { month: 'short', day: 'numeric', year: 'numeric'}
                     const date = new Date(activity.start_date_local)
@@ -66,9 +64,8 @@ module.exports = {
                         distance: activity.distance
                     }
                 })
-                const table = createTable(interaction.user.username, formattedActivities)
-                const tableAsString = table.join('')
-                await interaction.reply(tableAsString)
+                const activitiesTable = createActivitiesTable(interaction.user.username, formattedActivities)
+                await interaction.reply(activitiesTable)
 
             } catch(e) {
                 console.log(e)
@@ -86,7 +83,7 @@ module.exports = {
 
             try {
                 let activities;
-                if(category !== undefined) {
+                if(category !== undefined) { // user provided a category in discord command 
                     activities = await getActivitiesByDiscordId(discordId, category)
                 } else {
                     activities = await getActivitiesByDiscordId(discordId)
@@ -101,9 +98,8 @@ module.exports = {
                         distance: activity.distance
                     }
                 })
-                const table = createTable(user.username, formattedActivities)
-                const tableAsString = table.join('')
-                await user.send(tableAsString)
+                const table = createActivitiesTable(user.username, formattedActivities)
+                await user.send(table)
                 
             } catch(e) {
                 console.log(e)
