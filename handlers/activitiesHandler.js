@@ -17,7 +17,7 @@ const getActivitiesByDiscordId = async (discordId, params) => {
         delete params.category
     }
     try {
-        const res = await fetch(`${process.env.API_URL}/user/activities?discordId=${discordId}&`
+        const res = await fetch(`${process.env.API_URL}/activities?discordId=${discordId}&`
         + querystring.stringify(params))
         const activities = await res.json()
         return activities 
