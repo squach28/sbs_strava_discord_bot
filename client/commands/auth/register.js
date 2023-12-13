@@ -14,14 +14,9 @@ const message = (url) => {
     return `Please use the following link to complete registration: ${url}`
 }
 
-const saveUser = async (discordId, avatarId, sessionId) => {
-    const res = await createUser(discordId, avatarId, sessionId)
-    return res
-}
 
 const userAlreadyExistsMsg = 'You already completed registration!'
-// TODO: add user to database with discordId and avatarUrl, but without accessToken, stravaId, and refreshTime
-// after they complete authentication, update the fields
+
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('register')
@@ -33,7 +28,7 @@ module.exports = {
             const sessionId = v4()
             try {
                 const user = await checkIfUserExists(discordId)
-                if(user) { // TODO: user either already exists or hasn't completed registration, CHECK
+                if(user) {
                     if(user.sessionId) {
                         await updateSessionId(discordId, { sessionId: sessionId })
                         await discordUser.send(`Here's a new link to register: ${message(formatUrl(sessionId))}`)
@@ -41,7 +36,7 @@ module.exports = {
                         await discordUser.send(userAlreadyExistsMsg)
                     }
                 } else {
-                    await saveUser(discordId, avatarId, sessionId)
+                    await createUser(discordId, avatarId, sessionId)
                     await discordUser.send(message(formatUrl(sessionId)))
                     await interaction.reply('A link has been sent to you, please use the link to complete registration!')
                 }
@@ -64,12 +59,12 @@ module.exports = {
                         await discordUser.send(userAlreadyExistsMsg)
                     }
                 } else {
-                    await saveUser(discordId, avatarId, sessionId)
+                    await createUser(discordId, avatarId, sessionId)
                     await discordUser.send(message(formatUrl(sessionId)))
                 }
             } catch(e) {
                 console.log(e)
-                await user.send('Something went wrong, please try again later.')
+                await discordUser.send('Something went wrong, please try again later.')
             }
 
         }
