@@ -25,6 +25,7 @@ module.exports = {
             const discordUser = interaction.user
             const discordId = discordUser.id
             const avatarId = discordUser.avatar
+            const discordName = discordUser.username
             const sessionId = v4()
             try {
                 const user = await checkIfUserExists(discordId)
@@ -36,7 +37,7 @@ module.exports = {
                         await discordUser.send(userAlreadyExistsMsg)
                     }
                 } else {
-                    await createUser(discordId, avatarId, sessionId)
+                    await createUser(discordId, discordName, avatarId, sessionId)
                     await discordUser.send(message(formatUrl(sessionId)))
                     await interaction.reply('A link has been sent to you, please use the link to complete registration!')
                 }
@@ -49,6 +50,7 @@ module.exports = {
             const discordId = discordUser.id
             const avatarId = discordUser.avatar
             const sessionId = v4()
+            const discordName = discordUser.username
             try {
                 const user = await checkIfUserExists(discordId)
                 if(user) { // user exists in DB
@@ -59,7 +61,7 @@ module.exports = {
                         await discordUser.send(userAlreadyExistsMsg)
                     }
                 } else {
-                    await createUser(discordId, avatarId, sessionId)
+                    await createUser(discordId, discordName, avatarId, sessionId)
                     await discordUser.send(message(formatUrl(sessionId)))
                 }
             } catch(e) {

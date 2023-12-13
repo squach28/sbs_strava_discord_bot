@@ -12,10 +12,11 @@ const checkIfUserExists = async (discordId) => {
     return null 
 }
 
-const createUser = async (discordId, avatarId, sessionId) => {
+const createUser = async (discordId, discordName, avatarId, sessionId) => {
     const avatarUrl = `https://cdn.discordapp.com/avatars/${discordId}/${avatarId}`
     const body = {
         discordId: discordId,
+        discordName: discordName,
         avatarUrl: avatarUrl,
         sessionId: sessionId
     }
