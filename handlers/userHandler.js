@@ -29,8 +29,14 @@ const createUser = async (discordId, avatarId, sessionId) => {
     return res
 }
 
-const updateUser = async (user) => {
-    const res = await fetch(`${process.env.API_URL}/user/updateUser`)
+const updateSessionId = async (discordId, sessionId) => {
+    const res = await fetch(`${process.env.API_URL}/user/updateSessionId?discordId=${discordId}`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(sessionId)
+    })
 }
 
-module.exports = { checkIfUserExists, createUser }
+module.exports = { checkIfUserExists, createUser, updateSessionId }

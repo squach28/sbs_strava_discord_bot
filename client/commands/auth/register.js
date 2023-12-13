@@ -1,6 +1,6 @@
 // Command for registering a user's Strava account to the Discord bot
 const { SlashCommandBuilder } = require('discord.js')
-const { checkIfUserExists, createUser } = require('../../../handlers/userHandler')
+const { checkIfUserExists, createUser, updateSessionId } = require('../../../handlers/userHandler')
 const { v4 } = require('uuid')
 require('dotenv').config()
 
@@ -50,14 +50,13 @@ module.exports = {
             const sessionId = v4()
             try {
                 const user = await checkIfUserExists(discordId)
-                if(user) {
-                    if(user.sessionId) {
-                        await saveUser(discordId, avatarId, sessionId)
+                if(user) { // user exists in DB
+                    if(user.sessionId) { // user never completed registration, send new link with new session id 
+                        await updateSessionId(discordId, { sessionId: sessionId})
                         await discordUser.send(`Here's a new link to register: ${message(formatUrl(sessionId))}`)
                     } else {
                         await discordUser.send(userAlreadyExistsMsg)
                     }
-
                 } else {
                     await saveUser(discordId, avatarId, sessionId)
                     await discordUser.send(message(formatUrl(sessionId)))
