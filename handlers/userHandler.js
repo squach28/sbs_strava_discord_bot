@@ -6,9 +6,31 @@ const fetch = require('node-fetch')
 const checkIfUserExists = async (discordId) => {
     const res = await fetch(`${process.env.API_URL}/user/${discordId}`)
     if(res.status === 200) { // success, user found
-        return true
+        const user = await res.json()
+        return user
     }
-    return false 
+    return null 
 }
 
-module.exports = { checkIfUserExists }
+const createUser = async (discordId, avatarId, sessionId) => {
+    const avatarUrl = `https://cdn.discordapp.com/avatars/${discordId}/${avatarId}`
+    const body = {
+        discordId: discordId,
+        avatarUrl: avatarUrl,
+        sessionId: sessionId
+    }
+    const res = await fetch(`${process.env.API_URL}/user/createUser`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(body)
+    })
+    return res
+}
+
+const updateUser = async (user) => {
+    const res = await fetch(`${process.env.API_URL}/user/updateUser`)
+}
+
+module.exports = { checkIfUserExists, createUser }
