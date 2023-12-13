@@ -27,20 +27,26 @@ module.exports = {
         .setName('register')
         .setDescription('Provides the user a link to register their Strava account with the Discord bot'),
         async execute(interaction) {
-            const user = interaction.user
-            const discordId = user.id
-            const avatarId = user.avatar
+            const discordUser = interaction.user
+            const discordId = discordUser.id
+            const avatarId = discordUser.avatar
             const sessionId = v4()
             try {
-                const userExists = await checkIfUserExists(discordId)
-                if(userExists) { // TODO: user either already exists or hasn't completed registration, CHECK
-                    await interaction.reply(userAlreadyExistsMsg)
+                const user = await checkIfUserExists(discordId)
+                if(user) { // TODO: user either already exists or hasn't completed registration, CHECK
+                    if(user.sessionId) {
+                        await updateSessionId(discordId, { sessionId: sessionId })
+                        await discordUser.send(`Here's a new link to register: ${message(formatUrl(sessionId))}`)
+                    } else {
+                        await discordUser.send(userAlreadyExistsMsg)
+                    }
                 } else {
-                    user.send(message(formatUrl(sessionId)))
                     await saveUser(discordId, avatarId, sessionId)
+                    await discordUser.send(message(formatUrl(sessionId)))
                     await interaction.reply('A link has been sent to you, please use the link to complete registration!')
                 }
             } catch(e) {
+                console.log(e)
                 await interaction.reply('Something went wrong, please try again later.')
             }
         },
