@@ -2,6 +2,7 @@ const { SlashCommandBuilder } = require('discord.js')
 const { getStatsByDiscordId } = require('../../../handlers/statsHandler')
 const MAX_CHARACTER_LENGTH = 42
 
+// creates an ASCII table of the user's stats
 const createStatsTable = (name, stats) => {
     const table = []
     table.push(`Stats for ${name} \n`)

@@ -4,12 +4,18 @@ const fetch = require('node-fetch')
 
 // checks if user with Discord ID exists
 const checkIfUserExists = async (discordId) => {
-    const res = await fetch(`${process.env.API_URL}/user/${discordId}`)
-    if(res.status === 200) { // success, user found
-        const user = await res.json()
-        return user
+    try {
+        const res = await fetch(`${process.env.API_URL}/user/${discordId}`)
+        if(res.status === 200) { // success, user found
+            const user = await res.json()
+            return user
+        }
+        return null 
+    } catch(e) {
+        console.log(e)
+        return null
     }
-    return null 
+
 }
 
 // creates a user with discordId, discordname, avatarId, and sessionId
@@ -23,27 +29,37 @@ const createUser = async (discordId, discordName, avatarId, sessionId) => {
         avatarUrl: avatarUrl,
         sessionId: sessionId
     }
-    const res = await fetch(`${process.env.API_URL}/user/createUser`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(body)
-    })
-    return res
+    try {
+        const res = await fetch(`${process.env.API_URL}/user/createUser`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(body)
+        })
+        return res
+    } catch(e) {
+        console.log(e)
+    }
+
 }
 
 // updates a user's sessionId with a new one 
 // used if the user didn't complete registration and tries to register again
 const updateSessionId = async (discordId, sessionId) => {
-    const res = await fetch(`${process.env.API_URL}/user/updateSessionId?discordId=${discordId}`, {
-        method: 'PUT',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(sessionId)
-    })
-    return res
+    try {
+        const res = await fetch(`${process.env.API_URL}/user/updateSessionId?discordId=${discordId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(sessionId)
+        })
+        return res
+    } catch(e) {
+        console.log(e)
+    }
+
 }
 
 module.exports = { checkIfUserExists, createUser, updateSessionId }
