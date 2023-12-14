@@ -1,35 +1,49 @@
 const { SlashCommandBuilder } = require('discord.js')
 const { getLeaderboard } = require('../../../handlers/leaderboardHandler.js')
-const timeframeChoices = require('./timeframe.json')
+const monthChoices = require('./months.json')
 
 const MAX_CHARACTER_LENGTH = 42
 
-const createLeaderboardTable = (items, month = null, year = null) => {
+// creates an ASCII table for the leaderboard
+const createLeaderboardTable = (leaderboard, includeMonth) => {
     const table = []
-    let title
-    if(month && year) {
-        const date = new Date(year, month - 1) // subtract 1 from month to account that index starts at 0
+    let title // title depends on whether month needs to be included or not 
+    if(includeMonth) {
+        const date = new Date(leaderboard.year, leaderboard.month - 1) // subtract 1 from month to account that index starts at 0
         title = `${date.toLocaleString('en-US', { month: 'long', year: 'numeric'})} Leaderboard\n`
-    } else if(year) {
-        title = `${year} Leaderboard\n`
     } else {
-        title = `${new Date().toLocaleString('en-US', { month: 'long', year: 'numeric'})} Leaderboard\n`
+        title = `${leaderboard.year} Leaderboard\n`
     }
     const divider = '-'.repeat(MAX_CHARACTER_LENGTH) + "\n"
     table.push(title)
     table.push(divider)
-    for(let i = 0; i < items.length; i++) {
-        const numOfActivities = items[i].numOfActivities 
-        const distance = items[i].distance 
-        const discordId = items[i].discordName // TODO: replace this with name
-        table.push(`${i + 1}. **${discordId}**, ${numOfActivities} activities, ${distance} mi \n`)
+    const leaderboardUsers = leaderboard.users
+    for(let i = 0; i < leaderboardUsers.length; i++) {
+        const numOfActivities = leaderboardUsers[i].numOfActivities 
+        const distance = leaderboardUsers[i].distance 
+        const discordName = leaderboardUsers[i].discordName 
+        table.push(`${i + 1}. **${discordName}**, ${numOfActivities} activities, ${distance} mi \n`)
     }
     return table.join('')
 }
 
+// gets the leaderboard based on params and returns an ASCII table of the leaderboard
 const retrieveLeaderboard = async (params) => {
-    const leaderboard = await getLeaderboard(params)
-    return leaderboard
+    try {
+        const leaderboard = await getLeaderboard(params)
+        if(leaderboard === null) {
+            return 'No leaderboard exists'
+        } else {
+            const includeMonth = leaderboard.month === undefined ? false : true
+            const leaderboardTable = createLeaderboardTable(leaderboard, includeMonth)
+            return leaderboardTable
+        }
+    } catch(e) {
+        console.log(e)
+        return 'Something went wrong, please try again later.'
+    }
+
+    
 }
 
 module.exports = {
@@ -48,41 +62,23 @@ module.exports = {
         ,
         async autocomplete(interaction) {
             const focusedOption = interaction.options.getFocused(true)
-            const choices = timeframeChoices
+            const choices = monthChoices
             const filtered = choices.filter(choice => choice.startsWith(focusedOption.value))
             await interaction.respond(filtered.map(choice => ({ name: choice, value: choice})))
         },
         async execute(interaction) {
             const params = {}
-            const timeframeInfo = interaction.options._hoistedOptions.find(option => option.name === 'month_or_year' ? option : null)
-            const timeframeYearInfo = interaction.options._hoistedOptions.find(option => option.name === 'year' ? option : null)
-            if(timeframeYearInfo !== undefined) {
-                params['year'] = timeframeYearInfo.value
+            const monthOrYearInfo = interaction.options._hoistedOptions.find(option => option.name === 'month_or_year' ? option : null)
+            const yearInfo = interaction.options._hoistedOptions.find(option => option.name === 'year' ? option : null)
+            if(monthOrYearInfo !== undefined) {
+                params['year'] = monthOrYearInfo.value
             }
-            if(timeframeInfo !== undefined) {
-                params['monthOrYear'] = timeframeInfo.value
+            if(yearInfo !== undefined) {
+                params['monthOrYear'] = yearInfo.value
             }
-            try {
-                const leaderboard = await retrieveLeaderboard(params)
-                if(leaderboard.length === 0) {
-                    await interaction.reply(`No leaderboard`)
-                } else {
-                    let month, year 
-                    if(params['monthOrYear'] && params['year']) {
-                        month = leaderboard.month
-                        year = leaderboard.year 
-                    }
-                    if(params['monthOrYear']) {
-                        year = leaderboard.year
-                    }
-                    const leaderboardTable = createLeaderboardTable(leaderboard.users, month, year)
-                    await interaction.reply(leaderboardTable)
-                }
+            const leaderboard = await retrieveLeaderboard(params)
+            await interaction.reply(leaderboard)
 
-            } catch(e) {
-                console.log(e)
-                await interaction.reply('Something went wrong, please try again later.')
-            }
         },
         async handle(user, commandParams) {
             const monthOrYearInfo = commandParams[0]
@@ -95,22 +91,7 @@ module.exports = {
             if(monthOrYearInfo) {
                 params['monthOrYear'] = monthOrYearInfo
             }
-            try {
-                const leaderboard = await retrieveLeaderboard(params)
-
-                let month, year
-                if(params['monthOrYear'] && params['year']) {
-                    month = leaderboard.month
-                    year = leaderboard.year 
-                }
-                if(params['monthOrYear']) {
-                    year = leaderboard.year
-                }
-                const leaderboardTable = createLeaderboardTable(leaderboard.users, month, year)
-                await user.send(leaderboardTable)
-            } catch(e) {
-                console.log(e)
-                await user.send('Something went wrong, please try again later.')
-            }
+            const leaderboard = await retrieveLeaderboard(params)
+            await user.send(leaderboard)
         }
 }
