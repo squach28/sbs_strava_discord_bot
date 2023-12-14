@@ -16,7 +16,20 @@ const createStatsTable = (name, stats) => {
     const totalActivities = stats.reduce((accum, item) => accum += item.numOfActivities, 0)
     const summary = `Total Activities: **${totalActivities}**, Total Distance: **${totalDistance} mi**`
     table.push(summary)
-    return table
+    return table.join('')
+}
+
+// gets user's stats, used for both server command + bot dm command
+const getUserStats = async (user) => {
+    const discordId = user.id
+    try {
+        const stats = await getStatsByDiscordId(discordId)
+        const statsTable = createStatsTable(user.username, stats)
+        return statsTable
+    } catch(e) {
+        console.log(e)
+        return 'Something went wrong, please try again later.'
+    }
 }
 
 module.exports = {
@@ -25,26 +38,11 @@ module.exports = {
     .setDescription('Lets the user see their stats'),
     async execute(interaction) {
         const user = interaction.user
-        const discordId = user.id 
-        try {
-            const stats = await getStatsByDiscordId(discordId)
-            const statsTable = createStatsTable(user.username, stats)
-            await interaction.reply(statsTable.join(''))
-        } catch(e) {
-            console.log(e);
-            await interaction.reply('Something went wrong, please try again later.')
-        }
-
+        const stats = await getUserStats(user)
+        await interaction.reply(stats)
     },
     async handle(user) {
-        const discordId = user.id 
-        try {
-            const stats = await getStatsByDiscordId(discordId)
-            const statsTable = createStatsTable(user.username, stats)
-            await user.send(statsTable.join(''))
-        } catch(e) {
-            await user.send('Something went wrong, please try again later.')
-        }
-
+        const stats = await getUserStats(user)
+        await user.send(stats)
     }
 }
