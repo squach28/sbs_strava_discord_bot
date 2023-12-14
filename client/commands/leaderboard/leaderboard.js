@@ -21,7 +21,7 @@ const createLeaderboardTable = (items, month = null, year = null) => {
     for(let i = 0; i < items.length; i++) {
         const numOfActivities = items[i].numOfActivities 
         const distance = items[i].distance 
-        const discordId = items[i].discordId // TODO: replace this with name
+        const discordId = items[i].discordName // TODO: replace this with name
         table.push(`${i + 1}. **${discordId}**, ${numOfActivities} activities, ${distance} mi \n`)
     }
     return table.join('')
