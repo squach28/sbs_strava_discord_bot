@@ -24,6 +24,9 @@ const getUserStats = async (user) => {
     const discordId = user.id
     try {
         const stats = await getStatsByDiscordId(discordId)
+        if(stats.message) { // error occurred and object has a message
+            return stats.message
+        }
         const statsTable = createStatsTable(user.username, stats)
         return statsTable
     } catch(e) {

@@ -21,8 +21,13 @@ const createActivitiesTable = (name, items) => {
 }
 
 // call getActivitesByDiscordId in handler to call getActivitiesByDiscord API 
-const getActivities = async (discordId, params) => {
+const getActivities = async (user, params) => {
+    const discordId = user.id
+    const discordName = user.username
     const activities = await getActivitiesByDiscordId(discordId, params)
+    if(activities.message) {
+        return activities.message
+    }
     const formattedActivities = activities.map(activity => {
         const options = { month: 'short', day: 'numeric', year: 'numeric'}
         const date = new Date(activity.start_date_local)
@@ -33,7 +38,8 @@ const getActivities = async (discordId, params) => {
             distance: activity.distance
         }
     })
-    return formattedActivities
+    const activitiesTable = createActivitiesTable(discordName, formattedActivities)    
+    return activitiesTable
 }
 
 module.exports = {
@@ -65,18 +71,14 @@ module.exports = {
                 params['category'] = categoryInfo.value
             }
             try {
-                const activities = await getActivities(discordId, params)
-                // formats date to human readable date
-                const activitiesTable = createActivitiesTable(interaction.user.username, activities)
-                await interaction.reply(activitiesTable)
-
+                const activities = await getActivities(user, params)
+                await interaction.reply(activities)
             } catch(e) {
                 console.log(e)
                 await interaction.reply('Something went wrong, please try again later.')
             }
         },
         async handle(user, commandParams) {
-            const discordId = user.id
             if(commandParams.length > 1) {
                 await user.send('Too many parameters provided, please provide one category')
                 return 
@@ -87,10 +89,8 @@ module.exports = {
             }
 
             try { 
-                const activities = await getActivities(discordId, category)
-                const table = createActivitiesTable(user.username, activities)
-                await user.send(table)
-                
+                const activities = await getActivities(user, category)
+                await user.send(activities)                
             } catch(e) {
                 console.log(e)
                 await user.send('Something went wrong, please try again later.')
