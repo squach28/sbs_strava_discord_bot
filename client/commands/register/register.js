@@ -14,6 +14,42 @@ const message = (url) => {
     return `Please use the following link to complete registration: ${url}`
 }
 
+const createRegistrationSession = async (discordUser, interaction = null) => {
+    try {
+        const user = await checkIfUserExists(discordUser.id)
+        const sessionId = v4()
+        if(user) {
+            if(user.sessionId) {
+                await updateSessionId(discordUser.id)
+                await discordUser.send(`Here's a new link to register: ${message(formatUrl(sessionId))}`)
+                if(interaction) {
+                    await interaction.reply('A new link to register has been sent to you')
+                }
+            } else {
+                if(interaction) {
+                    await interaction.reply(userAlreadyExistsMsg)
+                } else {
+                    await discordUser.send(userAlreadyExistsMsg)
+                }
+
+            }
+        } else {
+            await createUser(discordUser.id, discordUser.username, discordUser.avatar, sessionId)
+            await discordUser.send(message(formatUrl(sessionId)))
+            if(interaction) {
+                await interaction.reply('A link has been sent to you, please use the link to complete registration!')
+            }
+        }
+    } catch(e) {
+        console.log(e)
+        if(interaction) {
+            await interaction.reply('Something went wrong, please try again later.')
+        } else {
+            await discordUser.send('Something went wrong, please try again later.')
+        }
+    }
+}
+
 const userAlreadyExistsMsg = 'You already completed registration!'
 
 module.exports = {
@@ -22,51 +58,9 @@ module.exports = {
         .setDescription('Provides the user a link to register their Strava account with the Discord bot'),
         async execute(interaction) {
             const discordUser = interaction.user
-            const discordId = discordUser.id
-            const avatarId = discordUser.avatar
-            const discordName = discordUser.username
-            const sessionId = v4()
-            try {
-                const user = await checkIfUserExists(discordId)
-                if(user) {
-                    if(user.sessionId) {
-                        await updateSessionId(discordId, { sessionId: sessionId })
-                        await discordUser.send(`Here's a new link to register: ${message(formatUrl(sessionId))}`)
-                    } else {
-                        await discordUser.send(userAlreadyExistsMsg)
-                    }
-                } else {
-                    await createUser(discordId, discordName, avatarId, sessionId)
-                    await discordUser.send(message(formatUrl(sessionId)))
-                    await interaction.reply('A link has been sent to you, please use the link to complete registration!')
-                }
-            } catch(e) {
-                console.log(e)
-                await interaction.reply('Something went wrong, please try again later.')
-            }
+            await createRegistrationSession(discordUser, interaction)
         },
         async handle(discordUser, _) {
-            const discordId = discordUser.id
-            const avatarId = discordUser.avatar
-            const sessionId = v4()
-            const discordName = discordUser.username
-            try {
-                const user = await checkIfUserExists(discordId)
-                if(user) { // user exists in DB
-                    if(user.sessionId) { // user never completed registration, send new link with new session id 
-                        await updateSessionId(discordId, { sessionId: sessionId})
-                        await discordUser.send(`Here's a new link to register: ${message(formatUrl(sessionId))}`)
-                    } else {
-                        await discordUser.send(userAlreadyExistsMsg)
-                    }
-                } else {
-                    await createUser(discordId, discordName, avatarId, sessionId)
-                    await discordUser.send(message(formatUrl(sessionId)))
-                }
-            } catch(e) {
-                console.log(e)
-                await discordUser.send('Something went wrong, please try again later.')
-            }
-
+            await createRegistrationSession(discordUser)
         }
 }            
