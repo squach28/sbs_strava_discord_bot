@@ -6,6 +6,9 @@ const MAX_CHARACTER_LENGTH = 42
 
 // creates an ASCII table for the leaderboard
 const createLeaderboardTable = (leaderboard, includeMonth) => {
+    if(leaderboard.message || leaderboard.users.length === 0) {
+        return `No leaderboard`
+    }
     const table = []
     let title // title depends on whether month needs to be included or not 
     if(includeMonth) {

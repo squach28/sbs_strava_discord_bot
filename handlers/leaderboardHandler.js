@@ -1,3 +1,5 @@
+// API handler for checking the leaderboard
+
 const fetch = require('node-fetch')
 const querystring = require('querystring')
 

@@ -14,7 +14,6 @@ const message = (url) => {
     return `Please use the following link to complete registration: ${url}`
 }
 
-
 const userAlreadyExistsMsg = 'You already completed registration!'
 
 module.exports = {
