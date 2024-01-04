@@ -14,7 +14,6 @@ const getLeaderboard = async (params) => {
     } catch(e) {
         console.log(`something went wrong ${e}`)
     }
-
 }
 
 module.exports = { getLeaderboard }
